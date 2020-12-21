@@ -10,7 +10,7 @@ export interface LimitedQueue<T> {
     /**
     * Pushes element to the queue, if reaches limit last element is ejected.
     * @param val Element to push to the queue.
-    * @returns Returns stack size.
+    * @returns Returns queue size.
     */
     push(val: T): number;
     /**
