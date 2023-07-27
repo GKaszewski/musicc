@@ -1,0 +1,95 @@
+{
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build",
+    "devPath": "http://localhost:1420",
+    "distDir": "../dist",
+    "withGlobalTauri": false
+  },
+  "package": {
+    "productName": "musicc",
+    "version": "0.0.0"
+  },
+  "tauri": {
+    "systemTray": {
+      "iconPath": "icons/32x32.png",
+      "iconAsTemplate" : true
+    },
+    "cli": {
+      "args": [
+        {
+          "name": "audio_files",
+          "index": 1,
+          "takesValue": true
+        }
+      ]
+    },
+    "allowlist": {
+      "all": false,
+      "shell": {
+        "all": false,
+        "open": true
+      },
+      "fs": {
+        "scope": [
+          "$AUDIO",
+          "$MUSIC",
+          "$PICTURES",
+          "$VIDEOS",
+          "$HOME",
+          "$DESKTOP",
+          "$HOME/**",
+          "**"
+        ],
+        "all": true,
+        "readFile": true,
+        "writeFile": true,
+        "readDir": true,
+        "copyFile": true,
+        "createDir": true,
+        "removeDir": true,
+        "removeFile": true,
+        "renameFile": true,
+        "exists": true
+      },
+      "dialog": {
+        "all": false,
+        "open": true,
+        "save": true
+      },
+      "notification": {
+        "all": true
+      },
+      "globalShortcut": {
+        "all": true
+      }
+    },
+    "bundle": {
+      "active": true,
+      "icon": [
+        "icons/32x32.png",
+        "icons/128x128.png",
+        "icons/128x128@2x.png",
+        "icons/icon.icns",
+        "icons/icon.ico"
+      ],
+      "identifier": "dev.gabrielkaszewski.musicc",
+      "targets": "all"
+    },
+    "security": {
+      "csp": null
+    },
+    "updater": {
+      "active": false
+    },
+    "windows": [
+      {
+        "fullscreen": false,
+        "resizable": true,
+        "title": "Musicc",
+        "width": 800,
+        "height": 600
+      }
+    ]
+  }
+}
