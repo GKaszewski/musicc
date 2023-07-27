@@ -8,19 +8,24 @@ import HomePanel from "./components/homePanel";
 import {getMatches} from "@tauri-apps/api/cli";
 import {sendNotification} from "@tauri-apps/api/notification";
 import {useSongs, useSongsUpdate} from "./context/songsContext";
-import { Metadata } from "./types";
+import { Metadata, Screens } from "./types";
+import { useAppStore } from "./store/store";
+import FilesScreen from "./screens/filesScreen";
 
 function App() {
     const [audioMetadata, setAudioMetadata] = useState<any | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const {songsUrls, currentSong, songsMetadata} = useSongs();
     const {setSongsUrls, setCurrentSong, setSongsMetadata} = useSongsUpdate();
+    const [coverUrl, setCoverUrl] = useState<string | null>(null);
+
+    const {currentScreen} = useAppStore(state => state);
 
     async function createUrlFromFilePath(selected: string) {
         const fileData = await fs.readBinaryFile(selected);
         const blob = new Blob([fileData], {type: 'audio/mpeg'});
         const url = URL.createObjectURL(blob);
-        setSongsUrls([...songsUrls, url]);
+        setSongsUrls([url]);
         sendNotification({
             title: 'Audio file loaded',
             body: 'Audio file loaded successfully',
@@ -68,7 +73,7 @@ function App() {
                 invoke("get_metadata", { filePath: result }).then(
                     (metadata) => {
                         console.log("Metadata", metadata);
-                        setSongsMetadata([...songsMetadata, metadata as Metadata]);
+                        setSongsMetadata([metadata as Metadata]);
                     }
                 );
 
@@ -86,13 +91,21 @@ function App() {
         });
     }, [])
 
+    useEffect(() => {
+        if (!songsMetadata[currentSong]) return;
+        if (!songsMetadata[currentSong].cover) return;
+        const url = `data:${songsMetadata[currentSong].cover.mime_type};base64,${songsMetadata[currentSong]?.cover?.data}`;
+        setCoverUrl(url);
+    }, [songsMetadata])
+
     return (
         <AudioPlayerProvider>
             <div className="w-full h-screen flex flex-col bg-gray-100">
                 <DisableContext/>
                 <input onChange={handleFileInputChange} ref={fileInputRef} type="file" accept="audio/*" multiple={true} hidden={true}/>
                 <button onClick={handleOpen} className="px-4 py-2">Open</button>
-                <HomePanel artSrc={null}/>
+                {currentScreen == Screens.Home && <HomePanel artSrc={coverUrl || null}/>}
+                {currentScreen == Screens.Library && <FilesScreen />}
                 <span className="flex-1"/>
                 <ControlsPanel src={songsUrls[currentSong]}/>
                 <NavBar/>
