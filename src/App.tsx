@@ -1,117 +1,139 @@
 import DisableContext from "./components/disableContext";
-import {dialog, fs, invoke} from '@tauri-apps/api';
-import {useEffect, useRef, useState} from "react";
-import {AudioPlayerProvider} from "react-use-audio-player";
+import { dialog, fs, invoke } from "@tauri-apps/api";
+import { useEffect, useRef } from "react";
+import { AudioPlayerProvider } from "react-use-audio-player";
 import NavBar from "./components/navBar";
 import ControlsPanel from "./components/controlsPanel";
 import HomePanel from "./components/homePanel";
-import {getMatches} from "@tauri-apps/api/cli";
-import {sendNotification} from "@tauri-apps/api/notification";
-import {useSongs, useSongsUpdate} from "./context/songsContext";
-import { Metadata, Screens } from "./types";
-import { useAppStore } from "./store/store";
+import { getMatches } from "@tauri-apps/api/cli";
+import { Metadata, Screens, Song } from "./types";
+import { AppState, useAppStore } from "./store/store";
 import FilesScreen from "./screens/filesScreen";
+import { createUrlFromFilePath, getBase64Url } from "./utils";
+import { listen } from "@tauri-apps/api/event";
 
 function App() {
-    const [audioMetadata, setAudioMetadata] = useState<any | null>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
-    const {songsUrls, currentSong, songsMetadata} = useSongs();
-    const {setSongsUrls, setCurrentSong, setSongsMetadata} = useSongsUpdate();
-    const [coverUrl, setCoverUrl] = useState<string | null>(null);
+	const fileInputRef = useRef<HTMLInputElement>(null);
+	const {
+		currentScreen,
+		currentSong,
+		setSongs,
+		setCurrentSong,
+        appendSong,
+        setSongsPaths,
+        appendSongPath,
+		songs,
+	} = useAppStore((state: AppState) => state);
 
-    const {currentScreen} = useAppStore(state => state);
+	const handleOpen = async () => {
+		//fileInputRef.current?.click();
 
-    async function createUrlFromFilePath(selected: string) {
-        const fileData = await fs.readBinaryFile(selected);
-        const blob = new Blob([fileData], {type: 'audio/mpeg'});
-        const url = URL.createObjectURL(blob);
-        setSongsUrls([url]);
-        sendNotification({
-            title: 'Audio file loaded',
-            body: 'Audio file loaded successfully',
-        });
-    }
+		const result = await dialog.open({
+			multiple: true,
+			filters: [
+				{ name: "Audio", extensions: ["mp3", "wav", "ogg", "flac"] },
+			],
+		});
 
-    const handleFileInputChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        if (event.target.files) {
-            const audioUrls = Array.from(event.target.files).map(file => URL.createObjectURL(file));
-            invoke("get_metadata", { filePath: audioUrls[0] }).then((metadata) => {
-                console.log("Metadata", metadata);
-            });
-            setSongsUrls(audioUrls);
-            setCurrentSong(0);
-            sendNotification({
-                title: 'Audio files loaded',
-                body: 'Audio files loaded successfully',
-            });
-        }
-    }
+		if (result) {
+			console.log("Audio result: ", result);
+			handleAudioFile(result);
+			setCurrentSong(0);
+		}
+	};
 
-    const handleOpen = async () => {
-        //fileInputRef.current?.click();
+	const handleAudioFile = (result: string[] | string | null) => {
+		if (!result) return;
+		if (result instanceof Array) {
+			setSongs([]);
+			result.forEach(async (filePath: string) => {
+				Promise.all([
+					invoke("get_metadata", { filePath: filePath }),
+					createUrlFromFilePath(filePath),
+				]).then(([metadata, url]) => {
+					const coverUrl = getBase64Url((metadata as Metadata).cover);
+					const song: Song = {
+						audioUrl: url,
+						metadata: metadata as Metadata,
+						coverUrl,
+					};
+                    appendSong(song);
+                    appendSongPath(filePath);
+				});
+			});
+		} else {
+			Promise.all([
+				invoke("get_metadata", { filePath: result }),
+				createUrlFromFilePath(result),
+			]).then(([metadata, url]) => {
+                const coverUrl = getBase64Url((metadata as Metadata).cover);
+				const song: Song = {
+                    audioUrl: url,
+                    coverUrl,
+					metadata: metadata as Metadata,
+				};
+				setSongs([song]);
+			});
+		}
+		setCurrentSong(0);
+	};
 
-        const result = await dialog.open({
-            multiple: true,
-            filters: [
-                { name: 'Audio', extensions: ['mp3', 'wav', 'ogg', 'flac'] },
-            ]
-        });
+	useEffect(() => {
+		getMatches().then((matches) => {
+			const audioPath = matches.args["audio_files"].value;
+			if (audioPath) {
+				handleAudioFile(audioPath as string);
+			}
+		});
 
-        if (result) {
-            console.log('Audio result: ', result);
-            if (result instanceof Array) {
-                result.forEach(async (filePath: string) => {
-                    await createUrlFromFilePath(filePath);
-                    invoke("get_metadata", { filePath: filePath }).then(
-                        (metadata) => {
-                            console.log("Metadata", metadata);
-                            setSongsMetadata([...songsMetadata, metadata as Metadata]);
-                        }
-                    );
-                });
-            } else {
-                invoke("get_metadata", { filePath: result }).then(
-                    (metadata) => {
-                        console.log("Metadata", metadata);
-                        setSongsMetadata([metadata as Metadata]);
-                    }
-                );
+		const handleFileDrop = async () => {
+			const unsubscribe = await listen(
+				"tauri://file-drop",
+                (event) => {
+                    const result = event.payload as string[] | string | null;
+                    handleAudioFile(result);
+                }
+			);
+			return unsubscribe;
+		};
 
-                createUrlFromFilePath(result);
-            }
-        }
-    }
+		let unsubscribe: any;
+		handleFileDrop().then((unsub) => {
+			unsubscribe = unsub;
+		});
 
-    useEffect(() => {
-        getMatches().then(matches => {
-            const audioPath = matches.args['audio_files'].value;
-            if (audioPath) {
-                createUrlFromFilePath(audioPath as string);
-            }
-        });
-    }, [])
+		return () => {
+			if (unsubscribe) {
+				unsubscribe();
+				console.log("Unsubscribed from file drop event");
+			}
+		};
+	}, []);
 
-    useEffect(() => {
-        if (!songsMetadata[currentSong]) return;
-        if (!songsMetadata[currentSong].cover) return;
-        const url = `data:${songsMetadata[currentSong].cover.mime_type};base64,${songsMetadata[currentSong]?.cover?.data}`;
-        setCoverUrl(url);
-    }, [songsMetadata])
-
-    return (
-        <AudioPlayerProvider>
-            <div className="w-full h-screen flex flex-col bg-gray-100">
-                <DisableContext/>
-                <input onChange={handleFileInputChange} ref={fileInputRef} type="file" accept="audio/*" multiple={true} hidden={true}/>
-                <button onClick={handleOpen} className="px-4 py-2">Open</button>
-                {currentScreen == Screens.Home && <HomePanel artSrc={coverUrl || null}/>}
-                {currentScreen == Screens.Library && <FilesScreen />}
-                <span className="flex-1"/>
-                <ControlsPanel src={songsUrls[currentSong]}/>
-                <NavBar/>
-            </div>
-        </AudioPlayerProvider>
-    );
+	return (
+		<AudioPlayerProvider>
+			<div className="w-full h-screen flex flex-col bg-gray-100">
+				<DisableContext />
+				<input
+					ref={fileInputRef}
+					type="file"
+					accept="audio/*"
+					multiple={true}
+					hidden={true}
+				/>
+				{/* <button onClick={handleOpen} className="px-4 py-2">
+					Open
+				</button> */}
+				{currentScreen == Screens.Home && (
+					<HomePanel artSrc={songs[currentSong!]?.coverUrl || null} />
+				)}
+				{currentScreen == Screens.Library && <FilesScreen />}
+				<span className="flex-1" />
+				<ControlsPanel />
+				<NavBar />
+			</div>
+		</AudioPlayerProvider>
+	);
 }
 
 export default App;

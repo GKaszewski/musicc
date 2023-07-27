@@ -3,12 +3,10 @@
 
 mod files;
 
-use id3::Tag;
+use files::{read_metadata_from_id3, read_metadata_from_flac};
 use serde::{Serialize, Deserialize};
 use tauri::{CustomMenuItem, SystemTrayMenu, SystemTrayMenuItem, SystemTray, SystemTrayEvent};
 use tauri::Manager;
-
-use base64::{Engine as _, engine::general_purpose};
 
 #[derive(Serialize, Deserialize)]
 pub struct Metadata {
@@ -27,55 +25,12 @@ pub struct Cover {
 
 #[tauri::command]
 async fn get_metadata(file_path: String) -> Metadata {
-    let metadata: Metadata;
+    let extension = file_path.split('.').last().unwrap();
+    if extension == "flac" {
+        return read_metadata_from_flac(&file_path);
+    }
 
-    match Tag::read_from_path(file_path) {
-        Ok(tag) => {
-            let title = tag.title().unwrap_or("Unknown Title");
-            let artist = tag.artist().unwrap_or("Unknown Artist");
-            let album = tag.album().unwrap_or("Unknown Album");
-            let cover: Cover;
-            
-            if let Some(picture) = tag.pictures().next() {
-                let cover_data = general_purpose::STANDARD.encode(&picture.data);
-                let cover_mime_type = picture.mime_type.clone();
-                cover = Cover {
-                    data: cover_data,
-                    mime_type: cover_mime_type,
-                };
-            } else {
-                cover = Cover {
-                    data: "".to_string(),
-                    mime_type: "".to_string(),
-                };
-            }
-
-            println!("Title: {}", title);
-            println!("Artist: {}", artist);
-            println!("Album: {}", album);
-
-            metadata = Metadata {
-                title: title.to_string(),
-                artist: artist.to_string(),
-                album: album.to_string(),
-                cover: cover,
-            };
-        }
-        Err(why) => {
-            println!("Error: {}", why);
-            metadata = Metadata {
-                title: "Unknown Title".to_string(),
-                artist: "Unknown Artist".to_string(),
-                album: "Unknown Album".to_string(),
-                cover: Cover {
-                    data: "".to_string(),
-                    mime_type: "".to_string(),
-                },
-            };
-        }
-    };
-    
-
+    let metadata = read_metadata_from_id3(&file_path);
     metadata
 }
 

@@ -1,3 +1,5 @@
+import { Box, Flex, Slider, SliderFilledTrack, SliderThumb, SliderTrack, Text } from "@chakra-ui/react";
+import { MdGraphicEq } from "react-icons/md";
 import {useAudioPosition} from "react-use-audio-player";
 
 const formatTime = (seconds: number) => {
@@ -13,10 +15,39 @@ const formatTime = (seconds: number) => {
 }
 
 const TimeLabel = () => {
-    const {duration, position} = useAudioPosition({highRefreshRate: true})
+    const {duration, position, seek} = useAudioPosition({highRefreshRate: true})
     if (duration === Infinity) return null
 
-    return <div className="text-sm text-white">{`${formatTime(position)} / ${formatTime(duration)}`}</div>
+    const handleSeek = (value: number) => {
+        console.log("Seeking to", value)
+        seek(value)
+    }
+
+    return (
+		<div className="w-1/2 mx-16 flex items-center">
+			<Text fontFamily="Roboto" fontSize="sm" color="white">
+				{formatTime(position)}
+			</Text>
+			<Slider
+				rounded="full"
+				width="full"
+				marginX="5"
+				value={position}
+                max={duration}
+                onChange={handleSeek}
+			>
+				<SliderTrack bg="red.600">
+					<SliderFilledTrack bg="red.100" />
+                </SliderTrack>
+                <SliderThumb boxSize={6}>
+                    <Box color="red.400" as={MdGraphicEq} />
+                </SliderThumb>
+			</Slider>
+			<Text fontFamily="Roboto"  fontSize="sm" color="white">
+				{formatTime(duration)}
+			</Text>
+		</div>
+	);
 }
 
 export default TimeLabel

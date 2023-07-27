@@ -10,13 +10,20 @@
     "tauri": "tauri"
   },
   "dependencies": {
+    "@chakra-ui/react": "^2.8.0",
+    "@emotion/react": "^11.11.1",
+    "@emotion/styled": "^11.11.0",
     "@tauri-apps/api": "^1.2.0",
+    "framer-motion": "^10.14.0",
     "howler": "^2.2.3",
+    "install": "^0.13.0",
+    "npm": "^9.8.1",
     "path-browserify": "^1.0.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-icons": "^4.8.0",
     "react-use-audio-player": "^1.2.6",
+    "rippleui": "^1.12.1",
     "zustand": "^4.3.9"
   },
   "devDependencies": {

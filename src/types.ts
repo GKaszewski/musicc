@@ -12,6 +12,7 @@ export type Cover = {
 
 export type Song = {
 	audioUrl: string;
+	coverUrl?: string | null;
 	metadata: Metadata | null;
 }
 
