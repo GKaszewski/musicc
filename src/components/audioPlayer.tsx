@@ -8,10 +8,8 @@ import {
 	FaStepBackward,
 	FaStepForward,
 	FaVolumeMute,
-	RxLoop,
-	RxShuffle,
-	RxSpeakerModerate,
-} from "react-icons/all";
+} from "react-icons/fa";
+import { RxLoop, RxShuffle, RxSpeakerModerate } from "react-icons/rx";
 import VolumeSlider from "./volumeSlider";
 import { useAppStore } from "../store/store";
 import {

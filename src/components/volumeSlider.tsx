@@ -1,6 +1,6 @@
 import {useAudioPlayer} from "react-use-audio-player";
-import {ChangeEvent, useCallback} from "react";
-import {FaVolumeUp} from "react-icons/all";
+import {useCallback} from "react";
+import {FaVolumeUp} from "react-icons/fa";
 import { Icon, Slider, SliderFilledTrack, SliderThumb, SliderTrack } from "@chakra-ui/react";
 
 const VolumeSlider = () => {

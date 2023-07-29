@@ -12,7 +12,7 @@ interface Props extends PropsWithChildren {
 }
 
 const SongCard = ({ songPath, children }: Props) => {
-	const { setSongs, setSongsPaths } = useAppStore(state => state);
+	const { setSongs, setSongsPaths, setIsLoadingSong } = useAppStore(state => state);
 	const { player } = useAudioPlayer();
 
 	const handleClick = () => {
@@ -20,10 +20,10 @@ const SongCard = ({ songPath, children }: Props) => {
 	}
 
 	const loadSong = () => {
-		console.log("Loading song: ", songPath);
 		setSongs([]);
 		setSongsPaths([]);
 		player?.stop();
+		setIsLoadingSong(true);
 		Promise.all([
 			invoke("get_metadata", { filePath: songPath }),
 			createUrlFromFilePath(songPath),
@@ -36,6 +36,7 @@ const SongCard = ({ songPath, children }: Props) => {
 			};
 			setSongs([song]);
 			setSongsPaths([songPath]);
+			setIsLoadingSong(false);
 		});
 	}
 

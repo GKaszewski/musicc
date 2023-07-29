@@ -1,12 +1,12 @@
 import { useAppStore } from "../store/store";
-import { SimpleGrid } from '@chakra-ui/react'
+import { CircularProgress, SimpleGrid } from '@chakra-ui/react'
 import DirectoryCard from "../components/directoryCard";
 import SongCard from "../components/songCard";
 import LibraryNavigation from "../components/libraryNavigation";
 import RootDirectoryCard from "../components/rootDirectoryCard";
 
 const FilesScreen = () => {
-    const {files, selectedDirectory} = useAppStore(state => state);
+    const {files, selectedDirectory, isSearchingForSongs} = useAppStore(state => state);
 
     const prettify = (file: string) => {
         const split = file.split("\\");
@@ -38,7 +38,10 @@ const FilesScreen = () => {
 
     return (
 		<>
-			<div className="w-full h-full p-4 overflow-y-auto flex flex-col items-center ">
+            <div className="w-full h-full p-4 overflow-y-auto flex flex-col items-center ">
+                {isSearchingForSongs && (
+                    <CircularProgress isIndeterminate color="red.300" />
+                )}
 				{selectedDirectory == "" && (
 					<>
 						<h1 className="text-2xl font-bold">Library</h1>

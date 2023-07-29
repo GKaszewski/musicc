@@ -16,6 +16,11 @@ export type Song = {
 	metadata: Metadata | null;
 }
 
+export type Playlist = {
+	name: string;
+	songs: Song[];
+}
+
 export enum Screens {
 	Home = "Home",
 	Library = "Library",

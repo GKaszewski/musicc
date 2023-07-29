@@ -23,6 +23,7 @@ function App() {
         setSongsPaths,
         appendSongPath,
 		songs,
+		setIsLoadingSong,
 	} = useAppStore((state: AppState) => state);
 
 	const handleOpen = async () => {
@@ -44,6 +45,7 @@ function App() {
 
 	const handleAudioFile = (result: string[] | string | null) => {
 		if (!result) return;
+		setIsLoadingSong(true);
 		if (result instanceof Array) {
 			setSongs([]);
 			result.forEach(async (filePath: string) => {
@@ -58,7 +60,8 @@ function App() {
 						coverUrl,
 					};
                     appendSong(song);
-                    appendSongPath(filePath);
+					appendSongPath(filePath);
+					setIsLoadingSong(false);
 				});
 			});
 		} else {
@@ -73,6 +76,7 @@ function App() {
 					metadata: metadata as Metadata,
 				};
 				setSongs([song]);
+				setIsLoadingSong(false);
 			});
 		}
 		setCurrentSong(0);
@@ -121,9 +125,6 @@ function App() {
 					multiple={true}
 					hidden={true}
 				/>
-				{/* <button onClick={handleOpen} className="px-4 py-2">
-					Open
-				</button> */}
 				{currentScreen == Screens.Home && (
 					<HomePanel artSrc={songs[currentSong!]?.coverUrl || null} />
 				)}

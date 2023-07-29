@@ -60,11 +60,18 @@ fn main() {
         .on_system_tray_event(|app, event| {
             match event {
                 SystemTrayEvent::MenuItemClick { id, .. } => {
+                    let item_handle = app.tray_handle().get_item(&id);
                     match id.as_str() {
                         "quit" => std::process::exit(0),
                         "hide" => {
                             let window = app.get_window("main").unwrap();
-                            window.hide().unwrap();
+                            if window.is_visible().unwrap() {
+                                window.hide().unwrap();
+                                let _ = item_handle.set_title("Show");
+                            } else {
+                                window.show().unwrap();
+                                let _ = item_handle.set_title("Hide");
+                            }
                         },
                         _ => {}
                     }

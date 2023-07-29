@@ -7,11 +7,14 @@ import { useAppStore } from "./store/store";
 import { ChakraProvider } from "@chakra-ui/react";
 
 const startup = async () => {
-  invoke("get_audio_files").then((result) => {
-    const audioFiles = result as string[];
-    console.log(`Found ${audioFiles.length} audio files`);
-    useAppStore.getState().setFiles(audioFiles);
-  });
+	useAppStore.getState().resetStore();
+	useAppStore.getState().setIsSearchingForSongs(true);
+	invoke("get_audio_files").then((result) => {
+		const audioFiles = result as string[];
+		console.log(`Found ${audioFiles.length} audio files`);
+		useAppStore.getState().setFiles(audioFiles);
+		useAppStore.getState().setIsSearchingForSongs(false);
+	});
 };
 
 startup();

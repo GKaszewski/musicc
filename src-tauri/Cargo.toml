@@ -21,6 +21,7 @@ metaflac = "*"
 walkdir = "2.3.3"
 dirs = "5.0.1"
 base64 = "0.21.2"
+discord-presence = "0.5"
 
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem
