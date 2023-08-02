@@ -1,14 +1,14 @@
-import {useAudioPlayer} from "react-use-audio-player";
+import {useGlobalAudioPlayer} from "react-use-audio-player";
 import {useCallback} from "react";
 import {FaVolumeUp} from "react-icons/fa";
 import { Icon, Slider, SliderFilledTrack, SliderThumb, SliderTrack } from "@chakra-ui/react";
 
 const VolumeSlider = () => {
-    const {volume} = useAudioPlayer();
+    const {volume, setVolume} = useGlobalAudioPlayer();
 
     const handleChange = useCallback(((value: number) => {
         const val =  parseFloat((Number(value) / 100).toFixed(2))
-        return volume(val)
+        return setVolume(val)
     }), [volume])
 
     return (

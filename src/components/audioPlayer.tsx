@@ -1,6 +1,6 @@
 import { FC, useEffect, useState } from "react";
 import React from "react";
-import { useAudioPlayer } from "react-use-audio-player";
+import { useGlobalAudioPlayer } from "react-use-audio-player";
 import TimeLabel from "./timeLabel";
 import {
 	FaPause,
@@ -20,17 +20,14 @@ import {
 	IconButton,
 } from "@chakra-ui/react";
 import { getDirName } from "../utils";
+import useAudioTime from "../hooks/useAudioTime";
 
 const AudioPlayer: FC = () => {
-	const { songs, currentSong, setCurrentSong, setSongs, songsPaths } =
+	const { songs, currentSong, setCurrentSong, setSongs } =
 		useAppStore((state) => state);
 
-	const { play, pause, stop, mute, playing, ready, ended } = useAudioPlayer({
-		src: songs[currentSong]?.audioUrl,
-		format: ["mp3", "wav", "ogg", "flac"],
-		autoplay: true,
-		html5: true,
-	});
+	const { play, pause, stop, mute, playing, isReady, load} = useGlobalAudioPlayer();
+	const { ended } = useAudioTime();
 
 	const [muted, setMuted] = useState(false);
 	const [loop, setLoop] = useState(false);
@@ -52,6 +49,11 @@ const AudioPlayer: FC = () => {
 		}
 	}, [ended]);
 
+	useEffect(() => {
+		console.log("Song changed ", currentSong);
+		loadSong(currentSong);
+	}, [currentSong]);
+
 	const handlePlay = () => {
 		if (playing) {
 			pause();
@@ -63,6 +65,27 @@ const AudioPlayer: FC = () => {
 	const handleLoop = () => {
 		setLoop((prev) => !prev);
 	};
+
+	const loadSong = (index: number) => {
+		console.log("Loading song ", index);
+		console.log("Songs: ", songs);
+		if (songs.length == 0) {
+			return;
+		}
+		if (index >= songs.length) {
+			return;
+		}
+		if (index < 0) {
+			return;
+		}
+
+		console.log("Format: ", songs[index].path.split(".").pop());
+		load(songs[index].audioUrl, {
+			html5: true,
+			autoplay: true,
+			format: songs[index].path.split(".").pop(),
+		});
+	}
 
 	const handleNext = () => {
 		if (currentSong + 1 < songs.length) {
@@ -86,13 +109,13 @@ const AudioPlayer: FC = () => {
 	};
 
 	const getTitle = () => {
-		if (songs.length == 0 || !songsPaths[currentSong]) {
+		if (songs.length == 0 || !songs[currentSong]) {
 			return "";
 		}
 		const title = songs[currentSong]?.metadata?.title;
 
 		if (!title || title.toLowerCase() == "unknown title") {
-			return getDirName(songsPaths[currentSong]);
+			return getDirName(songs[currentSong].path);
 		}
 
 		return title;
@@ -126,7 +149,7 @@ const AudioPlayer: FC = () => {
 
 	return (
 		<React.Fragment>
-			{ready && (
+			{isReady && (
 				<Flex direction="column" alignItems="center">
 					<p className="text-white">{getTitle()}</p>
 					<p className="text-white italic">{getArtist()}</p>

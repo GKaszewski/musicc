@@ -1,5 +1,6 @@
-import {useAudioPlayer, useAudioPosition} from "react-use-audio-player";
+import {useAudioPlayer, useGlobalAudioPlayer} from "react-use-audio-player";
 import {FC, useCallback, useEffect, useRef, useState} from "react";
+import useAudioTime from "../hooks/useAudioTime";
 
 interface Props {
     trackWidth: number;
@@ -11,10 +12,8 @@ interface Props {
 const AudioSeek: FC<Props> = (props) => {
     const {trackWidth, trackColor, indicatorWidth, indicatorColor} = props;
 
-    const {playing} = useAudioPlayer();
-    const {duration, seek, percentComplete} = useAudioPosition({
-        highRefreshRate: true
-    })
+    const {playing, duration, seek} = useGlobalAudioPlayer();
+    const {percentComplete} = useAudioTime();
 
     const seekBarElement = useRef<SVGSVGElement>(null);
 

@@ -3,7 +3,9 @@
 
 mod files;
 
-use files::{read_metadata_from_id3, read_metadata_from_flac};
+use std::path::PathBuf;
+
+use files::{read_metadata_from_id3, read_metadata_from_flac, stream_audio_data, search_for_audio_files};
 use serde::{Serialize, Deserialize};
 use tauri::{CustomMenuItem, SystemTrayMenu, SystemTrayMenuItem, SystemTray, SystemTrayEvent};
 use tauri::Manager;
@@ -23,6 +25,17 @@ pub struct Cover {
 }
 
 
+#[derive(Serialize, Deserialize)]
+pub struct StreamingData {
+    data: Vec<u8>,
+    read_bytes: usize,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct AudioSearchResult {
+    files: Vec<String>,
+}
+
 #[tauri::command]
 async fn get_metadata(file_path: String) -> Metadata {
     let extension = file_path.split('.').last().unwrap();
@@ -35,14 +48,60 @@ async fn get_metadata(file_path: String) -> Metadata {
 }
 
 #[tauri::command(async)]
-fn get_audio_files() -> Vec<String> {
+fn get_audio_files(dirs: Vec<PathBuf>) -> Vec<String> {
     let mut audio_files: Vec<String> = Vec::new();
+    let mut directories: Vec<PathBuf> = Vec::new();
 
     for dir in files::get_common_dirs() {
+        directories.push(dir);
+    }
+
+    for dir in dirs {
+        directories.push(dir);
+    }
+
+    for dir in directories {
         audio_files.append(&mut files::search_audio_files(&dir));
     }
 
     audio_files
+}
+
+#[tauri::command(async)]
+fn stream_audio_file(file_path: String, start: u64, end: u64) -> StreamingData {
+    match stream_audio_data(file_path, start, end) {
+        Ok((data, read_bytes)) => {
+            let streaming_data = StreamingData {
+                data: data,
+                read_bytes: read_bytes,
+            };
+            streaming_data
+        },
+        Err(e) => {
+            println!("Error: {}", e);
+            StreamingData {
+                data: Vec::new(),
+                read_bytes: 0,
+            }
+        }
+    }
+}
+
+#[tauri::command(async)]
+fn search_audio_files(dirs: Vec<PathBuf>, query: String) -> AudioSearchResult {
+    let result = search_for_audio_files(dirs, query.as_str());
+    match result {
+        Some(res) => {
+            return AudioSearchResult {
+                files: res,
+            }
+        },
+        None => {
+            return AudioSearchResult {
+                files: Vec::new(),
+            }
+        }
+    }
 }
 
 fn main() {
@@ -79,7 +138,7 @@ fn main() {
                 _ => {}
             }
         })
-        .invoke_handler(tauri::generate_handler![get_metadata, get_audio_files])
+        .invoke_handler(tauri::generate_handler![get_metadata, get_audio_files, stream_audio_file, search_audio_files])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

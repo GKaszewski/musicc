@@ -3,13 +3,13 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./styles.css";
 import { invoke } from "@tauri-apps/api";
-import { useAppStore } from "./store/store";
+import { useAppStore, useSettingsStore } from "./store/store";
 import { ChakraProvider } from "@chakra-ui/react";
 
 const startup = async () => {
 	useAppStore.getState().resetStore();
 	useAppStore.getState().setIsSearchingForSongs(true);
-	invoke("get_audio_files").then((result) => {
+	invoke("get_audio_files", {dirs: useSettingsStore.getState().directories}).then((result) => {
 		const audioFiles = result as string[];
 		console.log(`Found ${audioFiles.length} audio files`);
 		useAppStore.getState().setFiles(audioFiles);

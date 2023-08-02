@@ -12,8 +12,6 @@ const LibraryNavigation = () => {
 			directoriesMap[dir] = split.slice(0, i + 1).join("\\");
 		}
 		);
-
-		console.log("Directories map", directoriesMap);
 		return directoriesMap;
 	}
 

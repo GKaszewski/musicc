@@ -1,13 +1,13 @@
 import {FC} from "react";
 import artImage from "../assets/musical-note.webp";
-import {useAudioPlayer} from "react-use-audio-player";
+import {useGlobalAudioPlayer} from "react-use-audio-player";
 
 interface Props {
     artSrc: string | null | undefined;
 }
 
 const MusicArt: FC<Props> = ({artSrc}) => {
-    const {playing, play, pause} = useAudioPlayer()
+    const {playing, play, pause} = useGlobalAudioPlayer()
     const art = artSrc ? artSrc : artImage;
 
     const handleArtClick = () => {

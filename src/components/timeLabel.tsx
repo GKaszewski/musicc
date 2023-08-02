@@ -1,6 +1,7 @@
-import { Box, Flex, Slider, SliderFilledTrack, SliderThumb, SliderTrack, Text } from "@chakra-ui/react";
+import { Box, Slider, SliderFilledTrack, SliderThumb, SliderTrack, Text } from "@chakra-ui/react";
 import { MdGraphicEq } from "react-icons/md";
-import {useAudioPosition} from "react-use-audio-player";
+import { useGlobalAudioPlayer } from "react-use-audio-player";
+import useAudioTime from "../hooks/useAudioTime";
 
 const formatTime = (seconds: number) => {
     const floored = Math.floor(seconds)
@@ -15,24 +16,24 @@ const formatTime = (seconds: number) => {
 }
 
 const TimeLabel = () => {
-    const {duration, position, seek} = useAudioPosition({highRefreshRate: true})
-    if (duration === Infinity) return null
+    const {duration, seek} = useGlobalAudioPlayer();
+    const {pos} = useAudioTime();
 
     const handleSeek = (value: number) => {
-        console.log("Seeking to", value)
         seek(value)
     }
 
     return (
 		<div className="w-1/2 mx-16 flex items-center">
 			<Text fontFamily="Roboto" fontSize="sm" color="white">
-				{formatTime(position)}
+				{formatTime(pos)}
 			</Text>
 			<Slider
+                focusThumbOnChange={false}
 				rounded="full"
 				width="full"
 				marginX="5"
-				value={position}
+				value={pos}
                 max={duration}
                 onChange={handleSeek}
 			>

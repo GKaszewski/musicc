@@ -1,5 +1,5 @@
 import { useAppStore } from "../store/store";
-import { CircularProgress, SimpleGrid } from '@chakra-ui/react'
+import { CircularProgress, Heading, SimpleGrid } from '@chakra-ui/react'
 import DirectoryCard from "../components/directoryCard";
 import SongCard from "../components/songCard";
 import LibraryNavigation from "../components/libraryNavigation";
@@ -44,7 +44,7 @@ const FilesScreen = () => {
                 )}
 				{selectedDirectory == "" && (
 					<>
-						<h1 className="text-2xl font-bold">Library</h1>
+						<Heading fontFamily="Roboto">Library</Heading>
 						<SimpleGrid
 							columns={3}
 							spacing={10}

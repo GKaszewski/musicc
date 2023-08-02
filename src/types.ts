@@ -14,6 +14,7 @@ export type Song = {
 	audioUrl: string;
 	coverUrl?: string | null;
 	metadata: Metadata | null;
+	path: string;
 }
 
 export type Playlist = {
@@ -28,4 +29,13 @@ export enum Screens {
 	Playlists = "Playlists",
 	Search = "Search",
 	Loading = "Loading",
+}
+
+export type StreamAudioFileResult = {
+	data: Uint8Array;
+	read_bytes: number;
+}
+
+export type AudioSearchResult = {
+	files: string[];
 }

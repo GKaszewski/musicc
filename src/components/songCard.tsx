@@ -5,15 +5,15 @@ import { LinkBox, LinkOverlay, Card, CardBody, Text, Icon } from "@chakra-ui/rea
 import {BsFileMusic} from 'react-icons/bs'
 import { invoke } from "@tauri-apps/api";
 import { Metadata, Song } from "../types";
-import { useAudioPlayer } from "react-use-audio-player";
+import { useGlobalAudioPlayer } from "react-use-audio-player";
 
 interface Props extends PropsWithChildren {
 	songPath: string;
 }
 
-const SongCard = ({ songPath, children }: Props) => {
-	const { setSongs, setSongsPaths, setIsLoadingSong } = useAppStore(state => state);
-	const { player } = useAudioPlayer();
+const SongCard = ({ songPath }: Props) => {
+	const { setSongs, setIsLoadingSong, setCurrentSong } = useAppStore(state => state);
+	const { stop } = useGlobalAudioPlayer();
 
 	const handleClick = () => {
 		loadSong();
@@ -21,8 +21,8 @@ const SongCard = ({ songPath, children }: Props) => {
 
 	const loadSong = () => {
 		setSongs([]);
-		setSongsPaths([]);
-		player?.stop();
+		setCurrentSong(-1);
+		stop();
 		setIsLoadingSong(true);
 		Promise.all([
 			invoke("get_metadata", { filePath: songPath }),
@@ -33,9 +33,10 @@ const SongCard = ({ songPath, children }: Props) => {
 				audioUrl: url,
 				metadata: metadata as Metadata,
 				coverUrl,
+				path: songPath,
 			};
 			setSongs([song]);
-			setSongsPaths([songPath]);
+			setCurrentSong(0);
 			setIsLoadingSong(false);
 		});
 	}

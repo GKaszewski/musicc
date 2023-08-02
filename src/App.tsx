@@ -1,7 +1,6 @@
 import DisableContext from "./components/disableContext";
-import { dialog, fs, invoke } from "@tauri-apps/api";
+import { dialog, invoke } from "@tauri-apps/api";
 import { useEffect, useRef } from "react";
-import { AudioPlayerProvider } from "react-use-audio-player";
 import NavBar from "./components/navBar";
 import ControlsPanel from "./components/controlsPanel";
 import HomePanel from "./components/homePanel";
@@ -9,8 +8,11 @@ import { getMatches } from "@tauri-apps/api/cli";
 import { Metadata, Screens, Song } from "./types";
 import { AppState, useAppStore } from "./store/store";
 import FilesScreen from "./screens/filesScreen";
-import { createUrlFromFilePath, getBase64Url } from "./utils";
+import { createUrlFromFilePath, getBase64Url, readFileInChunks } from "./utils";
 import { listen } from "@tauri-apps/api/event";
+import Preferences from "./screens/preferences";
+import PlaylistScreen from "./screens/playlistsScreen";
+import SearchScreen from "./screens/searchScreen";
 
 function App() {
 	const fileInputRef = useRef<HTMLInputElement>(null);
@@ -20,8 +22,6 @@ function App() {
 		setSongs,
 		setCurrentSong,
         appendSong,
-        setSongsPaths,
-        appendSongPath,
 		songs,
 		setIsLoadingSong,
 	} = useAppStore((state: AppState) => state);
@@ -46,8 +46,10 @@ function App() {
 	const handleAudioFile = (result: string[] | string | null) => {
 		if (!result) return;
 		setIsLoadingSong(true);
+		setCurrentSong(-1);
 		if (result instanceof Array) {
 			setSongs([]);
+			readFileInChunks(result[0]);
 			result.forEach(async (filePath: string) => {
 				Promise.all([
 					invoke("get_metadata", { filePath: filePath }),
@@ -58,13 +60,14 @@ function App() {
 						audioUrl: url,
 						metadata: metadata as Metadata,
 						coverUrl,
+						path: filePath,
 					};
                     appendSong(song);
-					appendSongPath(filePath);
 					setIsLoadingSong(false);
 				});
 			});
 		} else {
+			readFileInChunks(result);
 			Promise.all([
 				invoke("get_metadata", { filePath: result }),
 				createUrlFromFilePath(result),
@@ -74,6 +77,7 @@ function App() {
                     audioUrl: url,
                     coverUrl,
 					metadata: metadata as Metadata,
+					path: result,
 				};
 				setSongs([song]);
 				setIsLoadingSong(false);
@@ -115,8 +119,7 @@ function App() {
 	}, []);
 
 	return (
-		<AudioPlayerProvider>
-			<div className="w-full h-screen flex flex-col bg-gray-100">
+		<div className="w-full h-screen flex flex-col bg-gray-100">
 				<DisableContext />
 				<input
 					ref={fileInputRef}
@@ -129,11 +132,13 @@ function App() {
 					<HomePanel artSrc={songs[currentSong!]?.coverUrl || null} />
 				)}
 				{currentScreen == Screens.Library && <FilesScreen />}
+				{currentScreen == Screens.Settings && <Preferences />}
+				{currentScreen == Screens.Playlists && <PlaylistScreen />}
+				{currentScreen == Screens.Search && <SearchScreen />}
 				<span className="flex-1" />
 				<ControlsPanel />
 				<NavBar />
 			</div>
-		</AudioPlayerProvider>
 	);
 }
 
